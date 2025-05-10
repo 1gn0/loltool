@@ -64,13 +64,16 @@ def register_game():
 
 def delete_last_game():
     delete_last_game = input("Delete last game? (y/n): ")
-    if delete_last_game == "y":
-        with open("games.csv", "r") as f:
-            lines = f.readlines()
-            lines.pop()
-        with open("games.csv", "w") as f:
-            f.writelines(lines)
-            f.close()
+    try :
+        if delete_last_game == "y":
+            with open("games.csv", "r") as f:
+                lines = f.readlines()
+                lines.pop()
+            with open("games.csv", "w") as f:
+                f.writelines(lines)
+                f.close()
+    except:
+        main()
 
 
 def read_matchup():
@@ -111,7 +114,7 @@ def read_matchup():
 
 
 def main():
-    print("[+] Welcome to LolTool")
+    
     print("Select an option:")
     print("[1] Register a game")
     print("[2] Delete last game")
@@ -133,4 +136,5 @@ def main():
 
 
 if __name__ == "__main__":
+    print("[+] Welcome to LolTool")
     main()
