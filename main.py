@@ -58,9 +58,12 @@ def register_game():
         print("Result must be 'win' or 'lose'")
         main()
     
-    recap = input("Recap (feelings about the game): ")
+    recap = input("Recap (feelings about the game): ").strip()
+    if not recap:
+        recap = ""
+            
 
-    with open("games.csv", "a", encoding="utf-8") as f:
+    with open("games.csv", "a", newline='\n', encoding="utf-8") as f:
         writer = csv.writer(f, delimiter='|', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         writer.writerow([my_champ, enemy_champ, kda, CS_total, CS_15min, result, recap])
         f.close()
