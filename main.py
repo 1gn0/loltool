@@ -91,13 +91,16 @@ def read_matchup():
     while not check_pool(enemy_champ):
         enemy_champ = input("Enemy Champion: ").strip()
 
-    with open("games.csv", "r", newline='') as f:
+    with open("games.csv", "r", newline='', encoding="utf-8") as f:
         lines = f.readlines()
     n = 0
     wins = 0
     looses = 0
     for line in lines:
-        parts = line.strip().split(",")
+        line = line.strip()
+        if not line:
+            continue
+        parts = line.split("|")
         champ = parts[0].strip()
         enemy = parts[1].strip()
         result = parts[5].strip().lower()  # "win" ou "loss"
@@ -118,7 +121,7 @@ def read_matchup():
 
         recap = input("Do you want to see recap of your last 5 games against this enemy champion? (y/n): ")
         if recap.lower() == "y":
-            with open("games.csv", newline='|', encoding="utf-8") as f:
+            with open("games.csv", newline='', encoding="utf-8") as f:
                 
                 reader = csv.reader(f, delimiter='|', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                 filtered = []
