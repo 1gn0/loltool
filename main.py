@@ -1,3 +1,5 @@
+import csv
+
 pool = [
     "aatrox", "ahri", "akali", "akshan", "alistar", "ambessa", "amumu", "anivia", "annie", "aphelios",
     "ashe", "aurelion sol", "aurora", "azir", "bard", "bel'veth", "blitzcrank", "brand", "braum", "briar",
@@ -59,7 +61,9 @@ def register_game():
     recap = input("Recap (feelings about the game): ")
 
     with open("games.csv", "a", encoding="utf-8") as f:
-        f.write(f"{my_champ}, {enemy_champ}, {kda}, {CS_total}, {CS_15min}, {result}, {recap}\n")
+        writer = csv.writer(f, delimiter='|', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        writer.writerow([my_champ, enemy_champ, kda, CS_total, CS_15min, result, recap])
+        f.close()
 
 
 def delete_last_game():
@@ -67,9 +71,11 @@ def delete_last_game():
     try :
         if delete_last_game == "y":
             with open("games.csv", "r") as f:
+                writer = csv.writer(f, delimiter='|', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                 lines = f.readlines()
                 lines.pop()
             with open("games.csv", "w") as f:
+                writer = csv.writer(f, delimiter='|', quotechar='"', quoting=csv.QUOTE_MINIMAL)
                 f.writelines(lines)
                 f.close()
     except:
@@ -77,40 +83,54 @@ def delete_last_game():
 
 
 def read_matchup():
-    my_champ = input("Champion: ")
+    my_champ = input("Champion: ").strip()
     while not check_pool(my_champ):
-        my_champ = input("Champion: ")
+        my_champ = input("Champion: ").strip()
 
-    enemy_champ = input("Enemy Champion: ")
+    enemy_champ = input("Enemy Champion: ").strip()
     while not check_pool(enemy_champ):
-        enemy_champ = input("Enemy Champion: ")
+        enemy_champ = input("Enemy Champion: ").strip()
 
-    with open("games.csv", "r") as f:
+    with open("games.csv", "r", newline='') as f:
         lines = f.readlines()
     n = 0
     wins = 0
     looses = 0
     for line in lines:
-        if line.split(",")[0] == my_champ and line.split(",")[1] == enemy_champ:
-            n+=1
-            if line.split(",")[4] == "win":
-                wins+=1
+        parts = line.strip().split(",")
+        champ = parts[0].strip()
+        enemy = parts[1].strip()
+        result = parts[5].strip().lower()  # "win" ou "loss"
+
+        if champ == my_champ and enemy == enemy_champ:
+            n += 1
+            if result == "win":
+                wins += 1
             else:
-                looses+=1
+                looses += 1
 
     print(f"you played {n} games against {enemy_champ}")
 
     if n != 0:
         print(f"you won {wins} games against {enemy_champ}")
         print(f"you lost {looses} games against {enemy_champ}")
-        print(f"you won {wins/n*100}% of the time")
+        print(f"you won {wins/n*100:.2f}% of the time")
+
         recap = input("Do you want to see recap of your last 5 games against this enemy champion? (y/n): ")
-        if recap == "y":
-            with open("games.csv", "r") as f:
-                lines = f.readlines()
-                for line in lines:
-                    if line.split(",")[0] == my_champ and line.split(",")[1] == enemy_champ:
-                        print(line.split(",")[5])
+        if recap.lower() == "y":
+            with open("games.csv", newline='|', encoding="utf-8") as f:
+                
+                reader = csv.reader(f, delimiter='|', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                filtered = []
+
+                for row in reader:
+                    if row[0].strip() == my_champ and row[1].strip() == enemy_champ:
+                        filtered.append(row)
+
+                last_5 = filtered[-5:]
+                print("\nRecap of last 5 games:")
+                for game in last_5:
+                    print(game[6].strip())  
 
 
 def main():
@@ -124,15 +144,19 @@ def main():
         option = input("Option: ")
         if option == "1":
             register_game()
+            main()
         elif option == "2":
             delete_last_game()
+            main()
         elif option == "3":
             read_matchup()
+            main()
         elif option == "4":
             exit(0)
         else:
             print("Invalid option")
-    register_game()
+            main()
+
 
 
 if __name__ == "__main__":
