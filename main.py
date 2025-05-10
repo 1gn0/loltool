@@ -27,13 +27,12 @@ def check_pool(champion):
 def register_game():
 
     my_champ = input("Champion: ")
-    if not check_pool(my_champ):
-        print("Champion not in pool")
-        exit(1)
+    while not check_pool(my_champ):
+        my_champ = input("Champion: ")
+
     enemy_champ = input("Enemy Champion: ")
-    if not check_pool(enemy_champ):
-        print("Champion not in pool")
-        exit(1)
+    while not check_pool(enemy_champ):
+        enemy_champ = input("Enemy Champion: ")
 
     kda = input("KDA: ")
     try :
@@ -43,19 +42,19 @@ def register_game():
         deaths = list_kda[2]
     except:
         print("KDA must be in the form of 'kills/assists/deaths'")
-        exit(1)
+        main()
     
     try:
         CS_total = int(input("CS Total: "))
         CS_15min = int(input("CS 15min: "))
     except :
         print("CS must be an integer")
-        exit(1)
+        main()
     
     result = input("Result: ")
     if result not in ["win", "lose"]:
         print("Result must be 'win' or 'lose'")
-        exit(1)
+        main()
     
     recap = input("Recap (feelings about the game): ")
 
@@ -76,13 +75,13 @@ def delete_last_game():
 
 def read_matchup():
     my_champ = input("Champion: ")
-    if not check_pool(my_champ):
-        print("Champion not in pool")
-        exit(1)
+    while not check_pool(my_champ):
+        my_champ = input("Champion: ")
+
     enemy_champ = input("Enemy Champion: ")
-    if not check_pool(enemy_champ):
-        print("Champion not in pool")
-        exit(1)
+    while not check_pool(enemy_champ):
+        enemy_champ = input("Enemy Champion: ")
+
     with open("games.csv", "r") as f:
         lines = f.readlines()
     n = 0
@@ -97,7 +96,7 @@ def read_matchup():
                 looses+=1
 
     print(f"you played {n} games against {enemy_champ}")
-    
+
     if n != 0:
         print(f"you won {wins} games against {enemy_champ}")
         print(f"you lost {looses} games against {enemy_champ}")
@@ -111,10 +110,7 @@ def read_matchup():
                         print(line.split(",")[5])
 
 
-
-
-
-if __name__ == "__main__":
+def main():
     print("[+] Welcome to LolTool")
     print("Select an option:")
     print("[1] Register a game")
@@ -134,3 +130,7 @@ if __name__ == "__main__":
         else:
             print("Invalid option")
     register_game()
+
+
+if __name__ == "__main__":
+    main()
