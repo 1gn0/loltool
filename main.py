@@ -96,31 +96,37 @@ def read_matchup():
 
     with open("games.csv", "r", newline='', encoding="utf-8") as f:
         lines = f.readlines()
-    n = 0
-    wins = 0
-    looses = 0
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-        parts = line.split("|")
-        champ = parts[0].strip()
-        enemy = parts[1].strip()
-        result = parts[5].strip().lower()  # "win" ou "loss"
-
-        if champ == my_champ and enemy == enemy_champ:
-            n += 1
-            if result == "win":
-                wins += 1
-            else:
-                looses += 1
-
+        n = 0
+        wins = 0
+        looses = 0
+        CS_15min_global = 0
+        CS_15min_matchup = 0
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split("|")
+            champ = parts[0].strip()
+            enemy = parts[1].strip()
+            result = parts[5].strip().lower()  # "win" ou "loss"
+            CS_15min = parts[4].strip()
+            CS_15min_global += int(CS_15min)
+            
+            if champ == my_champ and enemy == enemy_champ:
+                n += 1
+                CS_15min_matchup += int(CS_15min)
+                if result == "win":
+                    wins += 1
+                else:
+                    looses += 1
+            
+    average_cs = CS_15min_global/len(lines)
     print(f"you played {n} games against {enemy_champ}")
 
     if n != 0:
-        print(f"you won {wins} games against {enemy_champ}")
-        print(f"you lost {looses} games against {enemy_champ}")
+    
         print(f"you won {wins/n*100:.2f}% of the time")
+        print(f"you farm {CS_15min_matchup/n} CS at 15min against this champion which is " + "inferior to average CS" if CS_15min_matchup/n < average_cs else "superior to average CS")
 
         recap = input("Do you want to see recap of your last 5 games against this enemy champion? (y/n): ")
         if recap.lower() == "y":
@@ -134,10 +140,42 @@ def read_matchup():
                         filtered.append(row)
 
                 last_5 = filtered[-5:]
-                print("\nRecap of last 5 games:")
+                print("\nRecap of last games:")
+                n_game = 0
                 for game in last_5:
-                    print(game[6].strip())  
+                    n_game += 1
+                    print(f"{n_game}. " + game[6].strip())  
 
+def player_stats():
+    with open("games.csv", "r", newline='', encoding="utf-8") as f:
+        lines = f.readlines()
+        n = 0
+        wins = 0
+        looses = 0
+        CS_15min_global = 0
+        CS_15min_matchup = 0
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split("|")
+            champ = parts[0].strip()
+            enemy = parts[1].strip()
+            result = parts[5].strip().lower()  # "win" ou "loss"
+            CS_15min = parts[4].strip()
+            CS_15min_global += int(CS_15min)
+            
+            n += 1
+            if result == "win":
+                wins += 1
+            else:
+                looses += 1
+            
+    average_cs = CS_15min_global/len(lines)
+    print(f"you registered {n} games in total")
+    print(f"With a winrate of {wins/n*100:.2f}%")
+    print(f"you farm {CS_15min_global/n} CS at 15min on average which is " + "inferior to 80 (actual objective)" if CS_15min_global/n < 80 else "superior to 80 (actual objective)")
 
 def main():
     
@@ -145,7 +183,9 @@ def main():
     print("[1] Register a game")
     print("[2] Delete last game")
     print("[3] Read matchup")
-    print("[4] Exit")
+    print("[4] Player stats")
+    print("[5] Exit")
+    
     while True:
         option = input("Option: ")
         if option == "1":
@@ -158,6 +198,9 @@ def main():
             read_matchup()
             main()
         elif option == "4":
+            player_stats()
+            main()
+        elif option == "5": 
             exit(0)
         else:
             print("Invalid option")
