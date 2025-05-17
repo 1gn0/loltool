@@ -1,4 +1,7 @@
 import csv
+import requests
+import time
+import apicalls
 
 pool = [
     "aatrox", "ahri", "akali", "akshan", "alistar", "ambessa", "amumu", "anivia", "annie", "aphelios",
@@ -12,7 +15,7 @@ pool = [
     "master yi", "mel", "milio", "miss fortune", "mordekaiser", "morgana", "naafiri", "nami", "nasus", "nautilus",
     "neeko", "nidalee", "nilah", "nocturne", "nunu & willump", "olaf", "orianna", "ornn", "pantheon", "poppy",
     "pyke", "qiyana", "quinn", "rakan", "rammus", "rek'sai", "rell", "renata glasc", "renekton", "rengar",
-    "riven", "rumble", "ryze", "samira", "sejuani", "senna", "seraphine", "sett", "shaco", "shen",
+    "riven", "rumble", "ryze", "samira", "sejuani", "senna", "seraphine", "sett", "shaco", "shen",    
     "shyvana", "singed", "sion", "sivir", "skarner", "smolder", "sona", "soraka", "swain", "sylas",
     "syndra", "tahm kench", "taliyah", "talon", "taric", "teemo", "thresh", "tristana", "trundle", "tryndamere",
     "twisted fate", "twitch", "udyr", "urgot", "varus", "vayne", "veigar", "vel'koz", "vex", "vi",
@@ -26,64 +29,15 @@ def check_pool(champion):
         return False 
     return True
 
-def register_game():
-
-    my_champ = input("Champion: ")
-    while not check_pool(my_champ):
-        my_champ = input("Champion: ")
-
-    enemy_champ = input("Enemy Champion: ")
-    while not check_pool(enemy_champ):
-        enemy_champ = input("Enemy Champion: ")
-
-    kda = input("KDA: ")
+def clear_csv():
+    clear = input("Clear csv? (y/n): ")
     try :
-        list_kda = list(map(int, kda.split("/")))
-        kills = list_kda[0]
-        assists = list_kda[1]
-        deaths = list_kda[2]
-    except:
-        print("KDA must be in the form of 'kills/assists/deaths'")
-        main()
-    
-    try:
-        CS_total = int(input("CS Total: "))
-        CS_15min = int(input("CS 15min: "))
-    except :
-        print("CS must be an integer")
-        main()
-    
-    result = input("Result: ")
-    if result not in ["win", "lose"]:
-        print("Result must be 'win' or 'lose'")
-        main()
-    
-    recap = input("Recap (feelings about the game): ").strip()
-    if not recap:
-        recap = ""
-            
-
-    with open("games.csv", "a", newline='\n', encoding="utf-8") as f:
-        writer = csv.writer(f, delimiter='|', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        writer.writerow([my_champ, enemy_champ, kda, CS_total, CS_15min, result, recap])
-        f.close()
-
-
-def delete_last_game():
-    delete_last_game = input("Delete last game? (y/n): ")
-    try :
-        if delete_last_game == "y":
-            with open("games.csv", "r") as f:
-                writer = csv.writer(f, delimiter='|', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                lines = f.readlines()
-                lines.pop()
-            with open("games.csv", "w") as f:
-                writer = csv.writer(f, delimiter='|', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                f.writelines(lines)
-                f.close()
+        if clear == "y":
+            with open("games.csv", "r+", encoding="utf-8") as f:
+                f.truncate(0)  
+                f.seek(0) 
     except:
         main()
-
 
 def read_matchup():
     my_champ = input("Champion: ").strip()
@@ -95,8 +49,10 @@ def read_matchup():
         enemy_champ = input("Enemy Champion: ").strip()
 
     with open("games.csv", "r", newline='', encoding="utf-8") as f:
+        total_games_with_cs = 0
         lines = f.readlines()
         n = 0
+        n_games_with_cs = 0
         wins = 0
         looses = 0
         CS_15min_global = 0
@@ -106,50 +62,36 @@ def read_matchup():
             if not line:
                 continue
             parts = line.split("|")
-            champ = parts[0].strip()
-            enemy = parts[1].strip()
-            result = parts[5].strip().lower()  # "win" ou "loss"
-            CS_15min = parts[4].strip()
-            CS_15min_global += int(CS_15min)
+            champ = parts[1].strip()
+            enemy = parts[2].strip()
+            result = parts[6].strip().lower()  # "win" ou "loss"
+            CS_15min = parts[5].strip() if parts[5].strip() != "N/A" else "N/A"
+            CS_15min_global += int(CS_15min) if CS_15min != "N/A" else 0
+            total_games_with_cs += 1 if CS_15min != "N/A" else 0
             
             if champ == my_champ and enemy == enemy_champ:
                 n += 1
-                CS_15min_matchup += int(CS_15min)
+                n_games_with_cs += 1 if CS_15min != "N/A" else 0
+                CS_15min_matchup += int(CS_15min) if CS_15min != "N/A" else 0
                 if result == "win":
                     wins += 1
                 else:
                     looses += 1
             
-    average_cs = CS_15min_global/len(lines)
+    average_cs = CS_15min_global/total_games_with_cs
     print(f"you played {n} games against {enemy_champ}")
 
     if n != 0:
     
         print(f"you won {wins/n*100:.2f}% of the time")
-        print(f"you farm {CS_15min_matchup/n} CS at 15min against this champion which is " + "inferior to average CS" if CS_15min_matchup/n < average_cs else "superior to average CS")
+        print(f"you farm {CS_15min_matchup/n_games_with_cs} CS at 15min against this champion which is " + "inferior to average CS" if CS_15min_matchup/n_games_with_cs < average_cs else "superior to average CS") 
 
-        recap = input("Do you want to see recap of your last 5 games against this enemy champion? (y/n): ")
-        if recap.lower() == "y":
-            with open("games.csv", newline='', encoding="utf-8") as f:
-                
-                reader = csv.reader(f, delimiter='|', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                filtered = []
-
-                for row in reader:
-                    if row[0].strip() == my_champ and row[1].strip() == enemy_champ:
-                        filtered.append(row)
-
-                last_5 = filtered[-5:]
-                print("\nRecap of last games:")
-                n_game = 0
-                for game in last_5:
-                    n_game += 1
-                    print(f"{n_game}. " + game[6].strip())  
 
 def player_stats():
     with open("games.csv", "r", newline='', encoding="utf-8") as f:
         lines = f.readlines()
         n = 0
+        n_games_with_cs = 0
         wins = 0
         looses = 0
         CS_15min_global = 0
@@ -160,13 +102,13 @@ def player_stats():
             if not line:
                 continue
             parts = line.split("|")
-            champ = parts[0].strip()
-            enemy = parts[1].strip()
-            result = parts[5].strip().lower()  # "win" ou "loss"
-            CS_15min = parts[4].strip()
-            CS_15min_global += int(CS_15min)
-            
+            champ = parts[1].strip()
+            enemy = parts[2].strip()
+            result = parts[6].strip().lower()  # "win" ou "loss"
+            CS_15min = parts[5].strip() if parts[5].strip() != "N/A" else "N/A"
+            CS_15min_global += int(CS_15min) if CS_15min != "N/A" else 0
             n += 1
+            n_games_with_cs += 1 if CS_15min != "N/A" else 0
             if result == "win":
                 wins += 1
             else:
@@ -175,13 +117,43 @@ def player_stats():
     average_cs = CS_15min_global/len(lines)
     print(f"you registered {n} games in total")
     print(f"With a winrate of {wins/n*100:.2f}%")
-    print(f"you farm {CS_15min_global/n} CS at 15min on average which is " + "inferior to 80 (actual objective)" if CS_15min_global/n < 80 else "superior to 80 (actual objective)")
+    print(f"you farm {CS_15min_global/n_games_with_cs} CS at 15min on average which is " + "inferior to 80 (actual objective)" if CS_15min_global/n_games_with_cs < 80 else "superior to 80 (actual objective)")
+
+def actualise_profile():
+    player_name = input("Enter your riot name: ")
+    tag_line = input("Enter your tag line: ")
+    n_of_games = input("How many games do you want to register ? ")
+    try:
+        games_dict = apicalls.get_matches_infos(int(n_of_games), player_name, tag_line)
+    except:
+        print("Error while getting games infos")
+        main()
+
+    ids = []
+    with open("games.csv", "r", newline='', encoding="utf-8") as f:
+        lines = f.readlines()
+        id = [line.split("|")[0] for line in lines]
+        ids = list(set(id))
+        f.close()
+    with open("games.csv", "a", newline='\n', encoding="utf-8") as f:
+        writer = csv.writer(f, delimiter='|', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        for game in games_dict:
+            match_id = game
+            my_champ = games_dict[match_id][0].lower()
+            enemy_champ = games_dict[match_id][1].lower()
+            kda = games_dict[match_id][2]
+            CS_total = games_dict[match_id][3]
+            CS_15min = games_dict[match_id][4]
+            result = "win" if games_dict[match_id][5] == "Victory" else "lose"
+            if match_id not in ids:
+                writer.writerow([match_id, my_champ, enemy_champ, kda, CS_total, CS_15min, result])
+    f.close()
 
 def main():
     
     print("Select an option:")
-    print("[1] Register a game")
-    print("[2] Delete last game")
+    print("[1] Register your last games")
+    print("[2] Clear csv")
     print("[3] Read matchup")
     print("[4] Player stats")
     print("[5] Exit")
@@ -189,10 +161,10 @@ def main():
     while True:
         option = input("Option: ")
         if option == "1":
-            register_game()
+            actualise_profile()
             main()
         elif option == "2":
-            delete_last_game()
+            clear_csv()
             main()
         elif option == "3":
             read_matchup()
